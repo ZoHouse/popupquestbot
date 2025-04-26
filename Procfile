@@ -1,0 +1,1 @@
+web: python set_webhook.py && python zo_quest_bot.py 

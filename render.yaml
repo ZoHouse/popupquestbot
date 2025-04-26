@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: dxbxzo-quests-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python zo_quest_bot.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: ADMIN_GROUP_ID
+        sync: false
+      - key: PUBLIC_GROUP_ID
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: WEBHOOK_URL
+        value: https://popupquestbot.onrender.com
+      - key: PORT
+        value: "10000"
+      - key: USE_WEBHOOK
+        value: "true"
+      - key: RENDER
+        value: "true" 
