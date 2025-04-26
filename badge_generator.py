@@ -297,7 +297,7 @@ def generate_quest_badge(
             lines.append(current_line)  # Add the last line
             
             # Draw each line
-            y_pos = 110
+            y_pos = 160  # Moved from 110 to 160
             for line in lines:
                 draw.text((40, y_pos), line, fill=(0, 0, 0, 255), font=title_font)
                 y_pos += title_font.size - 5
@@ -306,8 +306,8 @@ def generate_quest_badge(
             desc_y = y_pos + 20
         else:
             # Single line title
-            draw.text((40, 110), title, fill=(0, 0, 0, 255), font=title_font)
-            desc_y = 190
+            draw.text((40, 160), title, fill=(0, 0, 0, 255), font=title_font)  # Moved from 110 to 160
+            desc_y = 230  # Moved from 190 to 230
         
         # Calculate max width for description to avoid icon overlap
         desc_max_width = width - 60  # 60px padding from left edge
@@ -326,7 +326,7 @@ def generate_quest_badge(
         
         # Create info section with improved spacing
         # Ensure min spacing between description and action, but also don't leave too much space
-        info_y = max(desc_y + 30, height - 170)  # At least 30px after description, but not too low
+        info_y = max(desc_y + 70, height - 140)  # Adjusted from (desc_y + 30, height - 170)
         
         # Add action with improved alignment and clear spacing
         draw.text((40, info_y), "Action:", fill=(0, 0, 0, 255), font=header_font)
@@ -357,16 +357,18 @@ def generate_quest_badge(
         
         draw.text((deadline_x, deadline_y + deadline_y_offset), deadline, fill=(0, 0, 0, 255), font=body_font)
         
+        # --- Icon and Button Positioning ---
+        icon_bg_y = 110 # Default vertical position for icon at the top
+        
         # Create a button/pill background for points with purple color
         points_text = str(points)
         points_width = draw.textlength(points_text, font=points_font)
         button_width = points_width + 80
         button_height = 70
         
-        # Position button to align with the bottom right area
-        button_x = width - button_width - 40
-        # Position button to align with the bottom right area
-        button_y = height - button_height - 40  # Fixed position from bottom
+        # Position button at the bottom right
+        button_x = width - button_width - 60  # Right edge padding
+        button_y = height - button_height - 50  # Fixed position from bottom
         
         # Create a more polished button with multiple layers
         # First create a black base with slight transparency for depth
@@ -423,41 +425,30 @@ def generate_quest_badge(
         # Paste the button onto the badge
         badge.paste(button, (int(button_x), int(button_y)), button)
         
-        # --- Icon Placement (Revised) ---
+        # --- Icon Placement Above Points Pill ---
         if icon_image:
             try:
-                target_icon_size = 260 # Define a target size for the icon area - Doubled from 130 to 260
-                icon_padding = 40    # Padding from the right edge
-    
-                # Ensure icon is RGBA
+                # Make icon slightly wider than points button
+                target_icon_size = int(button_width * 1.5)   # ~50% wider than the pill
+
                 if icon_image.mode != 'RGBA':
-                     icon_image = icon_image.convert('RGBA')
-                     
-                # Create a transparent background for the icon (instead of semi-transparent navy)
-                icon_bg = Image.new('RGBA', (target_icon_size, target_icon_size), (0, 0, 0, 0))  # Fully transparent
-                
-                # Resize original icon to fit within the target size while maintaining aspect ratio
-                icon_image_copy = icon_image.copy() # Work on a copy
-                icon_image_copy.thumbnail((target_icon_size, target_icon_size), Image.Resampling.LANCZOS)
-    
-                # Calculate position to center the resized icon onto the transparent background
-                paste_x = (target_icon_size - icon_image_copy.width) // 2
-                paste_y = (target_icon_size - icon_image_copy.height) // 2
-                
-                # Paste the resized icon onto the transparent background
-                icon_bg.paste(icon_image_copy, (paste_x, paste_y), icon_image_copy)
-                
-                # Calculate position for the background (with icon) on the main badge
-                icon_bg_x = width - icon_padding - target_icon_size
-                icon_bg_y = 110 # Position vertically (adjust as needed)
-    
-                # Paste the background (containing the icon) onto the main badge
-                badge.paste(icon_bg, (icon_bg_x, icon_bg_y), icon_bg)
-                logger.info(f"Pasted category icon (on transparent background) at ({icon_bg_x}, {icon_bg_y})")
-    
+                    icon_image = icon_image.convert('RGBA')
+
+                # Resize icon
+                icon_resized = icon_image.copy()
+                icon_resized.thumbnail((target_icon_size, target_icon_size), Image.Resampling.LANCZOS)
+
+                # Center horizontally over button
+                icon_center_x = button_x + (button_width // 2) - (target_icon_size // 2)
+                icon_center_y = button_y - target_icon_size - 20
+
+                # Paste icon
+                badge.paste(icon_resized, (int(icon_center_x), int(icon_center_y)), icon_resized)
+
+                logger.info(f"Pasted centered icon above points pill at ({icon_center_x}, {icon_center_y})")
             except Exception as e:
-                logger.error(f"Error processing or placing category icon: {e}")
-            
+                logger.error(f"Error placing icon: {e}")
+        
         # --- Store badge in Supabase ---
         if supabase_client and quest_id:
             try:
