@@ -252,7 +252,7 @@ def generate_quest_badge(
         
         # Load fonts
         try:
-            title_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 65)
+            title_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 50)  # Reduced from 65
             logo_font = ImageFont.truetype("fonts/Montserrat-ExtraBold.ttf", 65)
             header_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 32)
             body_font = ImageFont.truetype("fonts/Montserrat-Medium.ttf", 26)
@@ -271,18 +271,16 @@ def generate_quest_badge(
         draw.text((width - 40 - id_width, 40), id_text, fill=(0, 0, 0, 255), font=small_font)
         
         # Calculate max width for title to avoid icon overlap
-        title_max_width = width - 60  # 60px padding from left edge
+        title_max_width = width - 300  # Leave space for icon
         
-        # Truncate title to first 3 words if longer
-        title_words = title.split()
-        if len(title_words) > 3:
-            truncated_title = " ".join(title_words[:3])
-            title = truncated_title
+        # Process title - limit to 3 words and ensure max 2 lines
+        title_words = title.split()[:3]  # Limit to first 3 words
+        title = " ".join(title_words)
         
         # Add title with wrapping if needed
         if draw.textlength(title, font=title_font) > title_max_width:
-            # Need to wrap the title
-            words = title.split()
+            # Need to wrap the title into max 2 lines
+            words = title_words
             lines = []
             current_line = words[0]
             
@@ -294,20 +292,21 @@ def generate_quest_badge(
                     lines.append(current_line)
                     current_line = word
             
-            lines.append(current_line)  # Add the last line
+            lines.append(current_line)
+            lines = lines[:2]  # Ensure max 2 lines
             
-            # Draw each line
-            y_pos = 160  # Moved from 110 to 160
+            # Draw each line with reduced spacing
+            y_pos = 160  # Starting position for title
             for line in lines:
                 draw.text((40, y_pos), line, fill=(0, 0, 0, 255), font=title_font)
-                y_pos += title_font.size - 5
+                y_pos += title_font.size - 5  # Reduced spacing between lines
             
             # Adjust description starting position based on title height
-            desc_y = y_pos + 70  # Increased from 20px to 70px for more spacing
+            desc_y = y_pos + 40  # Reduced spacing after title
         else:
             # Single line title
-            draw.text((40, 160), title, fill=(0, 0, 0, 255), font=title_font)  # Moved from 110 to 160
-            desc_y = 230  # Moved from 190 to 230
+            draw.text((40, 160), title, fill=(0, 0, 0, 255), font=title_font)
+            desc_y = 230  # Reduced from 260
         
         # Calculate max width for description to avoid icon overlap
         desc_max_width = width - 60  # 60px padding from left edge
@@ -326,7 +325,7 @@ def generate_quest_badge(
         
         # Create info section with improved spacing
         # Ensure min spacing between description and action, but also don't leave too much space
-        info_y = max(desc_y + 70, height - 140)  # Adjusted from (desc_y + 30, height - 170)
+        info_y = max(desc_y + 40, height - 180)  # Reduced from (desc_y + 70, height - 140)
         
         # Add action with improved alignment and clear spacing
         draw.text((40, info_y), "Action:", fill=(0, 0, 0, 255), font=header_font)
@@ -340,23 +339,6 @@ def generate_quest_badge(
         body_ascent = (body_font.getbbox(action)[3] - body_font.getbbox(action)[1]) * 0.75
         action_y_offset = (header_ascent - body_ascent) / 2
         
-        draw.text((action_x, info_y + action_y_offset), action, fill=(0, 0, 0, 255), font=body_font)
-        
-        # Add deadline with proper spacing to avoid overlap
-        deadline_y = info_y + 50  # Slightly increased spacing between lines for better readability
-        draw.text((40, deadline_y), "Deadline:", fill=(0, 0, 0, 255), font=header_font)
-        
-        # Align deadline value with action value
-        deadline_width = draw.textlength("Deadline:", font=header_font)
-        deadline_x = 40 + deadline_width + 25  # Same spacing as action
-        
-        # Use the same alignment fix for deadline
-        header_ascent = (header_font.getbbox("Deadline:")[3] - header_font.getbbox("Deadline:")[1]) * 0.75
-        body_ascent = (body_font.getbbox(deadline)[3] - body_font.getbbox(deadline)[1]) * 0.75
-        deadline_y_offset = (header_ascent - body_ascent) / 2
-        
-        draw.text((deadline_x, deadline_y + deadline_y_offset), deadline, fill=(0, 0, 0, 255), font=body_font)
-        
         # --- Icon and Button Positioning ---
         icon_bg_y = 110 # Default vertical position for icon at the top
         
@@ -369,6 +351,61 @@ def generate_quest_badge(
         # Position button at the bottom right
         button_x = width - button_width - 60  # Right edge padding
         button_y = height - button_height - 50  # Fixed position from bottom
+        
+        # Calculate maximum width for action text to avoid overlap with points pill
+        max_action_width = button_x - action_x - 30  # 30px safe margin
+        
+        # Wrap action text if it's too long to fit without overlapping the points pill
+        if draw.textlength(action, font=body_font) > max_action_width:
+            # Break the action text into words and create a wrapped line
+            action_words = action.split()
+            wrapped_action = []
+            current_line = ""
+            
+            for word in action_words:
+                test_line = current_line + " " + word if current_line else word
+                if draw.textlength(test_line, font=body_font) <= max_action_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        wrapped_action.append(current_line)
+                        current_line = word
+                    else:
+                        # If even a single word is too long, truncate it
+                        wrapped_action.append(word[:10] + "...")
+                        break
+            
+            if current_line:
+                wrapped_action.append(current_line)
+            
+            # Draw each line of wrapped action text
+            action_y = info_y + action_y_offset
+            for i, line in enumerate(wrapped_action):
+                draw.text((action_x, action_y), line, fill=(0, 0, 0, 255), font=body_font)
+                action_y += body_font.size * 0.8  # Reduced line spacing for more compact look
+            
+            # Update deadline_y based on the last line of action
+            deadline_y = action_y + 10  # Reduced spacing between action and deadline
+        else:
+            # Draw single line action text
+            draw.text((action_x, info_y + action_y_offset), action, fill=(0, 0, 0, 255), font=body_font)
+            
+            # Keep original spacing for deadline if action didn't wrap
+            deadline_y = info_y + 40  # Reduced spacing
+        
+        # Add deadline with proper spacing to avoid overlap
+        draw.text((40, deadline_y), "Deadline:", fill=(0, 0, 0, 255), font=header_font)
+        
+        # Align deadline value with action value
+        deadline_width = draw.textlength("Deadline:", font=header_font)
+        deadline_x = 40 + deadline_width + 25  # Same spacing as action
+        
+        # Use the same alignment fix for deadline
+        header_ascent = (header_font.getbbox("Deadline:")[3] - header_font.getbbox("Deadline:")[1]) * 0.75
+        body_ascent = (body_font.getbbox(deadline)[3] - body_font.getbbox(deadline)[1]) * 0.75
+        deadline_y_offset = (header_ascent - body_ascent) / 2
+        
+        draw.text((deadline_x, deadline_y + deadline_y_offset), deadline, fill=(0, 0, 0, 255), font=body_font)
         
         # Create a more polished button with multiple layers
         # First create a black base with slight transparency for depth
