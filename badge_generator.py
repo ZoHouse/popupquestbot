@@ -303,7 +303,7 @@ def generate_quest_badge(
                 y_pos += title_font.size - 5
             
             # Adjust description starting position based on title height
-            desc_y = y_pos + 20
+            desc_y = y_pos + 70  # Increased from 20px to 70px for more spacing
         else:
             # Single line title
             draw.text((40, 160), title, fill=(0, 0, 0, 255), font=title_font)  # Moved from 110 to 160
